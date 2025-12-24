@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Wayan Jaya Abadi - Data Customer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>PT Wayan Jaya Abadi</h1>
+        <div class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul>
+                <li>
+                    <a href="index.html">Dashboard</a>
+                </li>
+                <li>
+                    <a href="data_barang.html">Data Barang</a>
+                </li>
+                <li class="active">
+                    <a href="data_customer.html">Data Customer</a>
+                </li>
+                <li>
+                    <a href="data_transaksi.html">Data Transaksi</a>
+                </li>
+                <li>
+                    <a href="laporan_penjualan.html">Laporan Penjualan</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a> / Data Customer
+            </div>
+
+            <h1 class="page-title">Data Customer</h1>
+
+            <div id="alert-container"></div>
+
+            <!-- Form Tambah/Edit Customer -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2 id="form-title">Tambah Customer Baru</h2>
+                <form id="form-customer">
+                    <input type="hidden" id="customer-id" name="id">
+                    
+                    <div class="form-group">
+                        <label>Nama Customer:</label>
+                        <input type="text" id="nama" name="nama" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Telepon:</label>
+                        <input type="text" id="telepon" name="telepon">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Alamat:</label>
+                        <textarea id="alamat" name="alamat"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tanggal Daftar:</label>
+                        <input type="date" id="tanggal-daftar" name="tanggal_daftar" required>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="btn btn-primary">Tambah Customer</button>
+                    <button type="button" id="cancel-btn" class="btn btn-danger" style="display: none;" onclick="resetForm()">Batal</button>
+                </form>
+            </div>
+
+            <!-- Tabel Data Customer -->
+            <div class="table-container">
+                <h2>Daftar Customer</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th>Telepon</th>
+                            <th>Alamat</th>
+                            <th>Tanggal Daftar</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-customer">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let editMode = false;
+        let editId = null;
+
+        // Set tanggal default
+        document.getElementById('tanggal-daftar').valueAsDate = new Date();
+
+        // Load data customer
+        function loadCustomer() {
+            const customer = getData('customer');
+            const tbody = document.getElementById('table-customer');
+            
+            if (customer.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data customer</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = customer.map(c => {
+                const alamat = c.alamat ? (c.alamat.length > 50 ? c.alamat.substring(0, 50) + '...' : c.alamat) : '-';
+                return `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td>${c.nama}</td>
+                        <td>${c.email || '-'}</td>
+                        <td>${c.telepon || '-'}</td>
+                        <td>${alamat}</td>
+                        <td>${formatTanggal(c.tanggal_daftar)}</td>
+                        <td>
+                            <a href="#" onclick="editCustomer(${c.id})" class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">Edit</a>
+                            <a href="#" onclick="hapusCustomer(${c.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Hapus</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit customer
+        function editCustomer(id) {
+            const customer = getData('customer');
+            const item = customer.find(c => c.id === id);
+            
+            if (item) {
+                editMode = true;
+                editId = id;
+                document.getElementById('customer-id').value = item.id;
+                document.getElementById('nama').value = item.nama;
+                document.getElementById('email').value = item.email || '';
+                document.getElementById('telepon').value = item.telepon || '';
+                document.getElementById('alamat').value = item.alamat || '';
+                document.getElementById('tanggal-daftar').value = item.tanggal_daftar;
+                document.getElementById('form-title').textContent = 'Edit Customer';
+                document.getElementById('submit-btn').textContent = 'Update Customer';
+                document.getElementById('submit-btn').className = 'btn btn-warning';
+                document.getElementById('cancel-btn').style.display = 'inline-block';
+            }
+        }
+
+        // Hapus customer
+        function hapusCustomer(id) {
+            if (confirm('Yakin ingin menghapus?')) {
+                const customer = getData('customer');
+                const filtered = customer.filter(c => c.id !== id);
+                saveData('customer', filtered);
+                showAlert('Data customer berhasil dihapus!', 'success');
+                loadCustomer();
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            editMode = false;
+            editId = null;
+            document.getElementById('form-customer').reset();
+            document.getElementById('customer-id').value = '';
+            document.getElementById('tanggal-daftar').valueAsDate = new Date();
+            document.getElementById('form-title').textContent = 'Tambah Customer Baru';
+            document.getElementById('submit-btn').textContent = 'Tambah Customer';
+            document.getElementById('submit-btn').className = 'btn btn-primary';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+
+        // Handle form submit
+        document.getElementById('form-customer').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nama = document.getElementById('nama').value;
+            const email = document.getElementById('email').value;
+            const telepon = document.getElementById('telepon').value;
+            const alamat = document.getElementById('alamat').value;
+            const tanggalDaftar = document.getElementById('tanggal-daftar').value;
+            
+            const customer = getData('customer');
+            
+            if (editMode) {
+                // Edit mode
+                const index = customer.findIndex(c => c.id === editId);
+                if (index !== -1) {
+                    customer[index] = {
+                        id: editId,
+                        nama: nama,
+                        email: email,
+                        telepon: telepon,
+                        alamat: alamat,
+                        tanggal_daftar: tanggalDaftar
+                    };
+                    saveData('customer', customer);
+                    showAlert('Data customer berhasil diupdate!', 'success');
+                    resetForm();
+                    loadCustomer();
+                }
+            } else {
+                // Add mode
+                const newCustomer = {
+                    id: getNextId('customer'),
+                    nama: nama,
+                    email: email,
+                    telepon: telepon,
+                    alamat: alamat,
+                    tanggal_daftar: tanggalDaftar
+                };
+                
+                customer.push(newCustomer);
+                saveData('customer', customer);
+                showAlert('Data customer berhasil ditambahkan!', 'success');
+                document.getElementById('form-customer').reset();
+                document.getElementById('tanggal-daftar').valueAsDate = new Date();
+                loadCustomer();
+            }
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            initSampleData();
+            loadCustomer();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Wayan Jaya Abadi - Data Transaksi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>PT Wayan Jaya Abadi</h1>
+        <div class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul>
+                <li>
+                    <a href="index.html">Dashboard</a>
+                </li>
+                <li>
+                    <a href="data_barang.html">Data Barang</a>
+                </li>
+                <li>
+                    <a href="data_customer.html">Data Customer</a>
+                </li>
+                <li class="active">
+                    <a href="data_transaksi.html">Data Transaksi</a>
+                </li>
+                <li>
+                    <a href="laporan_penjualan.html">Laporan Penjualan</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a> / Data Transaksi
+            </div>
+
+            <h1 class="page-title">Data Transaksi</h1>
+
+            <div id="alert-container"></div>
+
+            <!-- Form Tambah/Edit Transaksi -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2 id="form-title">Tambah Transaksi Baru</h2>
+                <form id="form-transaksi">
+                    <input type="hidden" id="transaksi-id" name="id">
+                    
+                    <div class="form-group">
+                        <label>No Transaksi:</label>
+                        <input type="text" id="no-transaksi" name="no_transaksi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Customer:</label>
+                        <select id="customer-id" name="customer_id" required>
+                            <option value="">Pilih Customer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tanggal Transaksi:</label>
+                        <input type="date" id="tanggal-transaksi" name="tanggal_transaksi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Total Harga:</label>
+                        <input type="number" id="total-harga" name="total_harga" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <select id="status" name="status" required>
+                            <option value="pending">Pending</option>
+                            <option value="selesai">Selesai</option>
+                            <option value="batal">Batal</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="btn btn-primary">Tambah Transaksi</button>
+                    <button type="button" id="cancel-btn" class="btn btn-danger" style="display: none;" onclick="resetForm()">Batal</button>
+                </form>
+            </div>
+
+            <!-- Tabel Data Transaksi -->
+            <div class="table-container">
+                <h2>Daftar Transaksi</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>No Transaksi</th>
+                            <th>Customer</th>
+                            <th>Tanggal</th>
+                            <th>Total Harga</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-transaksi">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let editMode = false;
+        let editId = null;
+
+        // Set tanggal default
+        document.getElementById('tanggal-transaksi').valueAsDate = new Date();
+
+        // Load customer untuk dropdown
+        function loadCustomerDropdown() {
+            const customer = getData('customer');
+            const select = document.getElementById('customer-id');
+            select.innerHTML = '<option value="">Pilih Customer</option>';
+            customer.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.nama;
+                select.appendChild(option);
+            });
+        }
+
+        // Load data transaksi
+        function loadTransaksi() {
+            const transaksi = getData('transaksi');
+            const customer = getData('customer');
+            const tbody = document.getElementById('table-transaksi');
+            
+            if (transaksi.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data transaksi</td></tr>';
+                return;
+            }
+            
+            // Sort by tanggal descending
+            const transaksiSorted = transaksi.sort((a, b) => new Date(b.tanggal_transaksi) - new Date(a.tanggal_transaksi));
+            
+            tbody.innerHTML = transaksiSorted.map(t => {
+                const cust = customer.find(c => c.id === t.customer_id);
+                const statusClass = t.status === 'selesai' ? 'btn-success' : 
+                                   (t.status === 'pending' ? 'btn-warning' : 'btn-danger');
+                return `
+                    <tr>
+                        <td>${t.id}</td>
+                        <td>${t.no_transaksi}</td>
+                        <td>${cust ? cust.nama : '-'}</td>
+                        <td>${formatTanggal(t.tanggal_transaksi)}</td>
+                        <td>${formatRupiah(t.total_harga)}</td>
+                        <td><span class="btn ${statusClass}" style="padding: 5px 10px; font-size: 12px;">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+                        <td>
+                            <a href="#" onclick="editTransaksi(${t.id})" class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">Edit</a>
+                            <a href="#" onclick="hapusTransaksi(${t.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Hapus</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit transaksi
+        function editTransaksi(id) {
+            const transaksi = getData('transaksi');
+            const item = transaksi.find(t => t.id === id);
+            
+            if (item) {
+                editMode = true;
+                editId = id;
+                document.getElementById('transaksi-id').value = item.id;
+                document.getElementById('no-transaksi').value = item.no_transaksi;
+                document.getElementById('customer-id').value = item.customer_id;
+                document.getElementById('tanggal-transaksi').value = item.tanggal_transaksi;
+                document.getElementById('total-harga').value = item.total_harga;
+                document.getElementById('status').value = item.status;
+                document.getElementById('form-title').textContent = 'Edit Transaksi';
+                document.getElementById('submit-btn').textContent = 'Update Transaksi';
+                document.getElementById('submit-btn').className = 'btn btn-warning';
+                document.getElementById('cancel-btn').style.display = 'inline-block';
+            }
+        }
+
+        // Hapus transaksi
+        function hapusTransaksi(id) {
+            if (confirm('Yakin ingin menghapus?')) {
+                const transaksi = getData('transaksi');
+                const filtered = transaksi.filter(t => t.id !== id);
+                saveData('transaksi', filtered);
+                showAlert('Data transaksi berhasil dihapus!', 'success');
+                loadTransaksi();
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            editMode = false;
+            editId = null;
+            document.getElementById('form-transaksi').reset();
+            document.getElementById('transaksi-id').value = '';
+            document.getElementById('tanggal-transaksi').valueAsDate = new Date();
+            document.getElementById('form-title').textContent = 'Tambah Transaksi Baru';
+            document.getElementById('submit-btn').textContent = 'Tambah Transaksi';
+            document.getElementById('submit-btn').className = 'btn btn-primary';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+
+        // Handle form submit
+        document.getElementById('form-transaksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const noTransaksi = document.getElementById('no-transaksi').value;
+            const customerId = parseInt(document.getElementById('customer-id').value);
+            const tanggalTransaksi = document.getElementById('tanggal-transaksi').value;
+            const totalHarga = parseFloat(document.getElementById('total-harga').value);
+            const status = document.getElementById('status').value;
+            
+            const transaksi = getData('transaksi');
+            
+            if (editMode) {
+                // Edit mode
+                const index = transaksi.findIndex(t => t.id === editId);
+                if (index !== -1) {
+                    transaksi[index] = {
+                        id: editId,
+                        no_transaksi: noTransaksi,
+                        customer_id: customerId,
+                        tanggal_transaksi: tanggalTransaksi,
+                        total_harga: totalHarga,
+                        status: status
+                    };
+                    saveData('transaksi', transaksi);
+                    showAlert('Data transaksi berhasil diupdate!', 'success');
+                    resetForm();
+                    loadTransaksi();
+                }
+            } else {
+                // Add mode
+                const newTransaksi = {
+                    id: getNextId('transaksi'),
+                    no_transaksi: noTransaksi,
+                    customer_id: customerId,
+                    tanggal_transaksi: tanggalTransaksi,
+                    total_harga: totalHarga,
+                    status: status
+                };
+                
+                transaksi.push(newTransaksi);
+                saveData('transaksi', transaksi);
+                showAlert('Data transaksi berhasil ditambahkan!', 'success');
+                document.getElementById('form-transaksi').reset();
+                document.getElementById('tanggal-transaksi').valueAsDate = new Date();
+                loadTransaksi();
+            }
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            initSampleData();
+            loadCustomerDropdown();
+            loadTransaksi();
+        });
+    </script>
+</body>
+</html>
+

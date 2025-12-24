@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Wayan Jaya Abadi - Data Barang</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>PT Wayan Jaya Abadi</h1>
+        <div class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul>
+                <li>
+                    <a href="index.html">Dashboard</a>
+                </li>
+                <li class="active">
+                    <a href="data_barang.html">Data Barang</a>
+                </li>
+                <li>
+                    <a href="data_customer.html">Data Customer</a>
+                </li>
+                <li>
+                    <a href="data_transaksi.html">Data Transaksi</a>
+                </li>
+                <li>
+                    <a href="laporan_penjualan.html">Laporan Penjualan</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a> / Data Barang
+            </div>
+
+            <h1 class="page-title">Data Barang</h1>
+
+            <div id="alert-container"></div>
+
+            <!-- Form Tambah/Edit Barang -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2 id="form-title">Tambah Barang Baru</h2>
+                <form id="form-barang">
+                    <input type="hidden" id="barang-id" name="id">
+                    
+                    <div class="form-group">
+                        <label>Kode Barang:</label>
+                        <input type="text" id="kode-barang" name="kode_barang" required placeholder="Contoh: BRG001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nama Barang:</label>
+                        <input type="text" id="nama-barang" name="nama_barang" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Harga:</label>
+                        <input type="number" id="harga" name="harga" step="0.01" required placeholder="Contoh: 1000000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Stok:</label>
+                        <input type="number" id="stok" name="stok" required min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Kategori:</label>
+                        <input type="text" id="kategori" name="kategori" placeholder="Contoh: Elektronik, Aksesoris">
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="btn btn-primary">Tambah Barang</button>
+                    <button type="button" id="cancel-btn" class="btn btn-danger" style="display: none;" onclick="resetForm()">Batal</button>
+                </form>
+            </div>
+
+            <!-- Tabel Data Barang -->
+            <div class="table-container">
+                <h2>Daftar Barang</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kode Barang</th>
+                            <th>Nama Barang</th>
+                            <th>Harga</th>
+                            <th>Stok</th>
+                            <th>Kategori</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-barang">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let editMode = false;
+        let editId = null;
+
+        // Load data barang
+        function loadBarang() {
+            const barang = getData('barang');
+            const tbody = document.getElementById('table-barang');
+            
+            if (barang.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data barang</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = barang.map(b => {
+                const stokStyle = b.stok <= 5 ? 'style="color: #f85149; font-weight: bold;"' : '';
+                return `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.kode_barang}</td>
+                        <td>${b.nama_barang}</td>
+                        <td>${formatRupiah(b.harga)}</td>
+                        <td ${stokStyle}>${b.stok}</td>
+                        <td>${b.kategori || '-'}</td>
+                        <td>
+                            <a href="#" onclick="editBarang(${b.id})" class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">Edit</a>
+                            <a href="#" onclick="hapusBarang(${b.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Hapus</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit barang
+        function editBarang(id) {
+            const barang = getData('barang');
+            const item = barang.find(b => b.id === id);
+            
+            if (item) {
+                editMode = true;
+                editId = id;
+                document.getElementById('barang-id').value = item.id;
+                document.getElementById('kode-barang').value = item.kode_barang;
+                document.getElementById('nama-barang').value = item.nama_barang;
+                document.getElementById('harga').value = item.harga;
+                document.getElementById('stok').value = item.stok;
+                document.getElementById('kategori').value = item.kategori || '';
+                document.getElementById('form-title').textContent = 'Edit Barang';
+                document.getElementById('submit-btn').textContent = 'Update Barang';
+                document.getElementById('submit-btn').className = 'btn btn-warning';
+                document.getElementById('cancel-btn').style.display = 'inline-block';
+            }
+        }
+
+        // Hapus barang
+        function hapusBarang(id) {
+            if (confirm('Yakin ingin menghapus?')) {
+                const barang = getData('barang');
+                const filtered = barang.filter(b => b.id !== id);
+                saveData('barang', filtered);
+                showAlert('Data barang berhasil dihapus!', 'success');
+                loadBarang();
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            editMode = false;
+            editId = null;
+            document.getElementById('form-barang').reset();
+            document.getElementById('barang-id').value = '';
+            document.getElementById('form-title').textContent = 'Tambah Barang Baru';
+            document.getElementById('submit-btn').textContent = 'Tambah Barang';
+            document.getElementById('submit-btn').className = 'btn btn-primary';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+
+        // Handle form submit
+        document.getElementById('form-barang').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const kodeBarang = document.getElementById('kode-barang').value;
+            const namaBarang = document.getElementById('nama-barang').value;
+            const harga = parseFloat(document.getElementById('harga').value);
+            const stok = parseInt(document.getElementById('stok').value);
+            const kategori = document.getElementById('kategori').value;
+            
+            const barang = getData('barang');
+            
+            if (editMode) {
+                // Edit mode
+                const existing = barang.find(b => b.kode_barang === kodeBarang && b.id !== editId);
+                if (existing) {
+                    showAlert('Kode barang sudah ada! Gunakan kode yang berbeda.', 'error');
+                    return;
+                }
+                
+                const index = barang.findIndex(b => b.id === editId);
+                if (index !== -1) {
+                    barang[index] = {
+                        id: editId,
+                        kode_barang: kodeBarang,
+                        nama_barang: namaBarang,
+                        harga: harga,
+                        stok: stok,
+                        kategori: kategori
+                    };
+                    saveData('barang', barang);
+                    showAlert('Data barang berhasil diupdate!', 'success');
+                    resetForm();
+                    loadBarang();
+                }
+            } else {
+                // Add mode
+                const existing = barang.find(b => b.kode_barang === kodeBarang);
+                if (existing) {
+                    showAlert('Kode barang sudah ada! Gunakan kode yang berbeda.', 'error');
+                    return;
+                }
+                
+                const newBarang = {
+                    id: getNextId('barang'),
+                    kode_barang: kodeBarang,
+                    nama_barang: namaBarang,
+                    harga: harga,
+                    stok: stok,
+                    kategori: kategori
+                };
+                
+                barang.push(newBarang);
+                saveData('barang', barang);
+                showAlert('Data barang berhasil ditambahkan!', 'success');
+                document.getElementById('form-barang').reset();
+                loadBarang();
+            }
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            initSampleData();
+            loadBarang();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Wayan Jaya Abadi - Laporan Penjualan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>PT Wayan Jaya Abadi</h1>
+        <div class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul>
+                <li>
+                    <a href="index.html">Dashboard</a>
+                </li>
+                <li>
+                    <a href="data_barang.html">Data Barang</a>
+                </li>
+                <li>
+                    <a href="data_customer.html">Data Customer</a>
+                </li>
+                <li>
+                    <a href="data_transaksi.html">Data Transaksi</a>
+                </li>
+                <li class="active">
+                    <a href="laporan_penjualan.html">Laporan Penjualan</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a> / Laporan Penjualan
+            </div>
+
+            <h1 class="page-title">Laporan Penjualan</h1>
+
+            <div id="alert-container"></div>
+
+            <!-- Form Edit Transaksi -->
+            <div id="edit-form-container" class="table-container" style="margin-bottom: 20px; display: none; background-color: #1c2128; border-left: 4px solid #d29922;">
+                <h2 style="color: #c9d1d9;">Edit Transaksi</h2>
+                <form id="form-edit-transaksi">
+                    <input type="hidden" id="edit-transaksi-id" name="id">
+                    
+                    <div class="form-group">
+                        <label>No Transaksi:</label>
+                        <input type="text" id="edit-no-transaksi" name="no_transaksi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Customer:</label>
+                        <select id="edit-customer-id" name="customer_id" required>
+                            <option value="">Pilih Customer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tanggal Transaksi:</label>
+                        <input type="date" id="edit-tanggal-transaksi" name="tanggal_transaksi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Total Harga:</label>
+                        <input type="number" id="edit-total-harga" name="total_harga" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Status:</label>
+                        <select id="edit-status" name="status" required>
+                            <option value="pending">Pending</option>
+                            <option value="selesai">Selesai</option>
+                            <option value="batal">Batal</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-warning">Update Transaksi</button>
+                    <button type="button" class="btn btn-danger" onclick="cancelEdit()">Batal</button>
+                </form>
+            </div>
+
+            <!-- Filter Tanggal -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2>Filter Laporan</h2>
+                <form id="filter-form" style="display: flex; gap: 15px; align-items: end;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Tanggal Awal:</label>
+                        <input type="date" id="tanggal-awal" name="tanggal_awal" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Tanggal Akhir:</label>
+                        <input type="date" id="tanggal-akhir" name="tanggal_akhir" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <button type="button" class="btn btn-danger" onclick="resetFilter()">Reset</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Statistik Laporan -->
+            <div class="stats-container" style="margin-bottom: 30px;">
+                <div class="stat-card blue">
+                    <h3>Total Penjualan</h3>
+                    <div class="number" id="stat-total-penjualan">Rp 0</div>
+                </div>
+                
+                <div class="stat-card green">
+                    <h3>Jumlah Transaksi</h3>
+                    <div class="number" id="stat-jumlah-transaksi">0</div>
+                </div>
+                
+                <div class="stat-card yellow">
+                    <h3>Rata-rata per Transaksi</h3>
+                    <div class="number" id="stat-rata-rata">Rp 0</div>
+                </div>
+            </div>
+
+            <!-- Laporan Per Bulan -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2>Laporan Penjualan Per Bulan</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bulan</th>
+                            <th>Jumlah Transaksi</th>
+                            <th>Total Penjualan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-bulanan">
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Laporan Per Customer -->
+            <div class="table-container" style="margin-bottom: 20px;">
+                <h2>Top 10 Customer Terbaik</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Customer</th>
+                            <th>Jumlah Transaksi</th>
+                            <th>Total Penjualan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-customer">
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Detail Transaksi -->
+            <div class="table-container">
+                <h2>Detail Transaksi</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No Transaksi</th>
+                            <th>Customer</th>
+                            <th>Tanggal</th>
+                            <th>Total Harga</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-detail">
+                        <tr>
+                            <td colspan="6" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let currentFilter = {
+            tanggal_awal: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+            tanggal_akhir: new Date().toISOString().split('T')[0]
+        };
+
+        // Set tanggal default
+        document.getElementById('tanggal-awal').value = currentFilter.tanggal_awal;
+        document.getElementById('tanggal-akhir').value = currentFilter.tanggal_akhir;
+
+        // Load customer untuk dropdown edit
+        function loadCustomerDropdown() {
+            const customer = getData('customer');
+            const select = document.getElementById('edit-customer-id');
+            select.innerHTML = '<option value="">Pilih Customer</option>';
+            customer.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.nama;
+                select.appendChild(option);
+            });
+        }
+
+        // Format bulan Indonesia
+        function formatBulan(bulan) {
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                          'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const [year, month] = bulan.split('-');
+            return `${months[parseInt(month) - 1]} ${year}`;
+        }
+
+        // Load statistik
+        function loadStatistik() {
+            const transaksi = getData('transaksi');
+            const filtered = transaksi.filter(t => {
+                const tgl = new Date(t.tanggal_transaksi);
+                const awal = new Date(currentFilter.tanggal_awal);
+                const akhir = new Date(currentFilter.tanggal_akhir);
+                return t.status === 'selesai' && tgl >= awal && tgl <= akhir;
+            });
+
+            const totalPenjualan = filtered.reduce((sum, t) => sum + (parseFloat(t.total_harga) || 0), 0);
+            const jumlahTransaksi = filtered.length;
+            const rataRata = jumlahTransaksi > 0 ? totalPenjualan / jumlahTransaksi : 0;
+
+            document.getElementById('stat-total-penjualan').textContent = formatRupiah(totalPenjualan);
+            document.getElementById('stat-jumlah-transaksi').textContent = jumlahTransaksi;
+            document.getElementById('stat-rata-rata').textContent = formatRupiah(rataRata);
+        }
+
+        // Load laporan per bulan
+        function loadLaporanBulanan() {
+            const transaksi = getData('transaksi');
+            const filtered = transaksi.filter(t => {
+                const tgl = new Date(t.tanggal_transaksi);
+                const awal = new Date(currentFilter.tanggal_awal);
+                const akhir = new Date(currentFilter.tanggal_akhir);
+                return t.status === 'selesai' && tgl >= awal && tgl <= akhir;
+            });
+
+            // Group by bulan
+            const bulanan = {};
+            filtered.forEach(t => {
+                const bulan = t.tanggal_transaksi.substring(0, 7); // YYYY-MM
+                if (!bulanan[bulan]) {
+                    bulanan[bulan] = { jumlah: 0, total: 0 };
+                }
+                bulanan[bulan].jumlah++;
+                bulanan[bulan].total += parseFloat(t.total_harga) || 0;
+            });
+
+            const tbody = document.getElementById('table-bulanan');
+            const bulananArray = Object.keys(bulanan).sort().reverse();
+
+            if (bulananArray.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Tidak ada data untuk periode ini</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = bulananArray.map(bulan => `
+                <tr>
+                    <td>${formatBulan(bulan)}</td>
+                    <td>${bulanan[bulan].jumlah}</td>
+                    <td>${formatRupiah(bulanan[bulan].total)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Load top customer
+        function loadTopCustomer() {
+            const transaksi = getData('transaksi');
+            const customer = getData('customer');
+            
+            const filtered = transaksi.filter(t => {
+                const tgl = new Date(t.tanggal_transaksi);
+                const awal = new Date(currentFilter.tanggal_awal);
+                const akhir = new Date(currentFilter.tanggal_akhir);
+                return t.status === 'selesai' && tgl >= awal && tgl <= akhir;
+            });
+
+            // Group by customer
+            const customerData = {};
+            filtered.forEach(t => {
+                if (!customerData[t.customer_id]) {
+                    customerData[t.customer_id] = { jumlah: 0, total: 0 };
+                }
+                customerData[t.customer_id].jumlah++;
+                customerData[t.customer_id].total += parseFloat(t.total_harga) || 0;
+            });
+
+            // Convert to array and sort
+            const customerArray = Object.keys(customerData).map(id => ({
+                id: parseInt(id),
+                jumlah: customerData[id].jumlah,
+                total: customerData[id].total
+            })).sort((a, b) => b.total - a.total).slice(0, 10);
+
+            const tbody = document.getElementById('table-customer');
+            if (customerArray.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Tidak ada data untuk periode ini</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = customerArray.map(c => {
+                const cust = customer.find(cu => cu.id === c.id);
+                return `
+                    <tr>
+                        <td>${cust ? cust.nama : '-'}</td>
+                        <td>${c.jumlah}</td>
+                        <td>${formatRupiah(c.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Load detail transaksi
+        function loadDetailTransaksi() {
+            const transaksi = getData('transaksi');
+            const customer = getData('customer');
+            
+            const filtered = transaksi.filter(t => {
+                const tgl = new Date(t.tanggal_transaksi);
+                const awal = new Date(currentFilter.tanggal_awal);
+                const akhir = new Date(currentFilter.tanggal_akhir);
+                return tgl >= awal && tgl <= akhir;
+            }).sort((a, b) => new Date(b.tanggal_transaksi) - new Date(a.tanggal_transaksi));
+
+            const tbody = document.getElementById('table-detail');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Tidak ada data transaksi untuk periode ini</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                const cust = customer.find(c => c.id === t.customer_id);
+                const statusClass = t.status === 'selesai' ? 'btn-success' : 
+                                   (t.status === 'pending' ? 'btn-warning' : 'btn-danger');
+                return `
+                    <tr>
+                        <td>${t.no_transaksi}</td>
+                        <td>${cust ? cust.nama : '-'}</td>
+                        <td>${formatTanggal(t.tanggal_transaksi)}</td>
+                        <td>${formatRupiah(t.total_harga)}</td>
+                        <td><span class="btn ${statusClass}" style="padding: 5px 10px; font-size: 12px;">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+                        <td>
+                            <a href="#" onclick="editTransaksi(${t.id})" class="btn btn-warning" style="padding: 5px 10px; font-size: 12px;">Edit</a>
+                            <a href="#" onclick="hapusTransaksi(${t.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Hapus</a>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit transaksi
+        function editTransaksi(id) {
+            const transaksi = getData('transaksi');
+            const item = transaksi.find(t => t.id === id);
+            
+            if (item) {
+                document.getElementById('edit-transaksi-id').value = item.id;
+                document.getElementById('edit-no-transaksi').value = item.no_transaksi;
+                document.getElementById('edit-customer-id').value = item.customer_id;
+                document.getElementById('edit-tanggal-transaksi').value = item.tanggal_transaksi;
+                document.getElementById('edit-total-harga').value = item.total_harga;
+                document.getElementById('edit-status').value = item.status;
+                document.getElementById('edit-form-container').style.display = 'block';
+                document.getElementById('edit-form-container').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            document.getElementById('edit-form-container').style.display = 'none';
+            document.getElementById('form-edit-transaksi').reset();
+        }
+
+        // Hapus transaksi
+        function hapusTransaksi(id) {
+            if (confirm('Yakin ingin menghapus?')) {
+                const transaksi = getData('transaksi');
+                const filtered = transaksi.filter(t => t.id !== id);
+                saveData('transaksi', filtered);
+                showAlert('Data transaksi berhasil dihapus!', 'success');
+                loadAll();
+            }
+        }
+
+        // Load all data
+        function loadAll() {
+            loadStatistik();
+            loadLaporanBulanan();
+            loadTopCustomer();
+            loadDetailTransaksi();
+        }
+
+        // Reset filter
+        function resetFilter() {
+            currentFilter = {
+                tanggal_awal: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                tanggal_akhir: new Date().toISOString().split('T')[0]
+            };
+            document.getElementById('tanggal-awal').value = currentFilter.tanggal_awal;
+            document.getElementById('tanggal-akhir').value = currentFilter.tanggal_akhir;
+            loadAll();
+        }
+
+        // Handle filter form
+        document.getElementById('filter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentFilter.tanggal_awal = document.getElementById('tanggal-awal').value;
+            currentFilter.tanggal_akhir = document.getElementById('tanggal-akhir').value;
+            loadAll();
+        });
+
+        // Handle edit form
+        document.getElementById('form-edit-transaksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = parseInt(document.getElementById('edit-transaksi-id').value);
+            const noTransaksi = document.getElementById('edit-no-transaksi').value;
+            const customerId = parseInt(document.getElementById('edit-customer-id').value);
+            const tanggalTransaksi = document.getElementById('edit-tanggal-transaksi').value;
+            const totalHarga = parseFloat(document.getElementById('edit-total-harga').value);
+            const status = document.getElementById('edit-status').value;
+            
+            const transaksi = getData('transaksi');
+            const index = transaksi.findIndex(t => t.id === id);
+            
+            if (index !== -1) {
+                transaksi[index] = {
+                    id: id,
+                    no_transaksi: noTransaksi,
+                    customer_id: customerId,
+                    tanggal_transaksi: tanggalTransaksi,
+                    total_harga: totalHarga,
+                    status: status
+                };
+                saveData('transaksi', transaksi);
+                showAlert('Data transaksi berhasil diupdate!', 'success');
+                cancelEdit();
+                loadAll();
+            }
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            initSampleData();
+            loadCustomerDropdown();
+            loadAll();
+        });
+    </script>
+</body>
+</html>
+

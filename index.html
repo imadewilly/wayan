@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Wayan Jaya Abadi - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>PT Wayan Jaya Abadi</h1>
+        <div class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="#">Contact</a>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul>
+                <li class="active">
+                    <a href="index.html">Dashboard</a>
+                </li>
+                <li>
+                    <a href="data_barang.html">Data Barang</a>
+                </li>
+                <li>
+                    <a href="data_customer.html">Data Customer</a>
+                </li>
+                <li>
+                    <a href="data_transaksi.html">Data Transaksi</a>
+                </li>
+                <li>
+                    <a href="laporan_penjualan.html">Laporan Penjualan</a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a> / Dashboard
+            </div>
+
+            <h1 class="page-title">Dashboard</h1>
+
+            <!-- Statistik Cards -->
+            <div class="stats-container">
+                <div class="stat-card blue">
+                    <h3>Data Jumlah Barang</h3>
+                    <div class="number" id="total-barang">0</div>
+                    <a href="data_barang.html" style="color: #58a6ff; text-decoration: none;">More info →</a>
+                </div>
+                
+                <div class="stat-card green">
+                    <h3>Total Customer</h3>
+                    <div class="number" id="total-customer">0</div>
+                    <a href="data_customer.html" style="color: #3fb950; text-decoration: none;">More info →</a>
+                </div>
+                
+                <div class="stat-card yellow">
+                    <h3>Total Transaksi</h3>
+                    <div class="number" id="total-transaksi">0</div>
+                    <a href="data_transaksi.html" style="color: #d29922; text-decoration: none;">More info →</a>
+                </div>
+                
+                <div class="stat-card red">
+                    <h3>Total Penjualan</h3>
+                    <div class="number" id="total-penjualan">Rp 0</div>
+                    <a href="laporan_penjualan.html" style="color: #f85149; text-decoration: none;">More info →</a>
+                </div>
+            </div>
+
+            <!-- Tabel Transaksi Terbaru -->
+            <div class="table-container">
+                <h2 style="margin-bottom: 15px;">Transaksi Terbaru</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No Transaksi</th>
+                            <th>Customer</th>
+                            <th>Tanggal</th>
+                            <th>Total Harga</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaksi-terbaru">
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Load statistik
+        function loadStatistik() {
+            const barang = getData('barang');
+            const customer = getData('customer');
+            const transaksi = getData('transaksi');
+            
+            document.getElementById('total-barang').textContent = barang.length;
+            document.getElementById('total-customer').textContent = customer.length;
+            document.getElementById('total-transaksi').textContent = transaksi.length;
+            
+            const totalPenjualan = transaksi
+                .filter(t => t.status === 'selesai')
+                .reduce((sum, t) => sum + (parseFloat(t.total_harga) || 0), 0);
+            document.getElementById('total-penjualan').textContent = formatRupiah(totalPenjualan);
+        }
+
+        // Load transaksi terbaru
+        function loadTransaksiTerbaru() {
+            const transaksi = getData('transaksi');
+            const customer = getData('customer');
+            
+            // Sort by tanggal descending dan ambil 5 terbaru
+            const transaksiSorted = transaksi
+                .sort((a, b) => new Date(b.tanggal_transaksi) - new Date(a.tanggal_transaksi))
+                .slice(0, 5);
+            
+            const tbody = document.getElementById('transaksi-terbaru');
+            
+            if (transaksiSorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Tidak ada data transaksi</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = transaksiSorted.map(t => {
+                const cust = customer.find(c => c.id === t.customer_id);
+                const statusClass = t.status === 'selesai' ? 'btn-success' : 'btn-warning';
+                return `
+                    <tr>
+                        <td>${t.no_transaksi}</td>
+                        <td>${cust ? cust.nama : '-'}</td>
+                        <td>${formatTanggal(t.tanggal_transaksi)}</td>
+                        <td>${formatRupiah(t.total_harga)}</td>
+                        <td><span class="btn ${statusClass}" style="padding: 5px 10px; font-size: 12px;">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', function() {
+            initSampleData();
+            loadStatistik();
+            loadTransaksiTerbaru();
+        });
+    </script>
+</body>
+</html>
+
